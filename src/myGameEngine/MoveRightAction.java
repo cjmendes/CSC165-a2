@@ -3,19 +3,22 @@ package myGameEngine;
 import a2.MyGame;
 import net.java.games.input.Event;
 import ray.input.action.AbstractInputAction;
+import ray.rage.scene.Node;
 
 public class MoveRightAction extends AbstractInputAction {
 
+	private Node avN;
 	private MyGame game;
 	
-	public MoveRightAction(MyGame g) {
+	public MoveRightAction(Node n, MyGame g) {
+		avN = n;
 		game = g;
 	}
 	
 	public void performAction(float time, Event event) {
 		if(game.getSprint())
-			game.getEngine().getSceneManager().getSceneNode(game.getActiveNode().getName()).moveLeft(game.getSpeed() * 0.03f);
+			avN.moveLeft(game.getSpeed() * 0.02f);
 		else
-			game.getEngine().getSceneManager().getSceneNode(game.getActiveNode().getName()).moveLeft(game.getSpeed());
+			avN.moveLeft(game.getSpeed());
 	}
 }

@@ -26,7 +26,7 @@ public class RideDolphinAction extends AbstractInputAction {
 			game.getEngine().getSceneManager().getSceneNode("OnDolphinNode").attachChild(game.getEngine().getSceneManager().getSceneNode("MainCameraNode"));
 			game.getEngine().getSceneManager().getSceneNode("MainCameraNode").setLocalPosition(0.0f, 0.0f, 0.0f);
 			game.getEngine().getSceneManager().getSceneNode("MainCameraNode").setLocalRotation(game.getEngine().getSceneManager().getSceneNode("OnDolphinNode").getLocalRotation());
-			game.setActiveNode(game.getEngine().getSceneManager().getSceneNode("myDolphinNode"));
+			game.setActiveNode(game.getEngine().getSceneManager().getSceneNode("dolphinNode"));
 			onDolphin = true;
 		}
 	}
