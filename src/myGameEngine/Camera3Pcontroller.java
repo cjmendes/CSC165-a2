@@ -1,4 +1,4 @@
-package a2;
+package myGameEngine;
 
 import ray.input.InputManager;
 import ray.input.action.AbstractInputAction;

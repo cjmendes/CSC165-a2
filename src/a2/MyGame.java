@@ -8,6 +8,7 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.stream.IntStream;
 
+import myGameEngine.Camera3Pcontroller;
 import myGameEngine.MoveBackwardAction;
 import myGameEngine.MoveForwardAction;
 import myGameEngine.MoveLeftAction;
