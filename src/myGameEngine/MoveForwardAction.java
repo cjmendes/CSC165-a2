@@ -16,9 +16,17 @@ public class MoveForwardAction extends AbstractInputAction {
 	}
 	
 	public void performAction(float time, Event event) {
-		if(game.getSprint())
-			avN.moveForward(game.getSpeed() * 0.02f);
-		else
-			avN.moveForward(game.getSpeed());
+		if (avN.getName().equals("dolphinNode")) {
+			if(game.getSprint(1))
+				avN.moveForward(game.getSpeed() * 0.02f);
+			else
+				avN.moveForward(game.getSpeed());
+		}
+		else {
+			if(game.getSprint(2))
+				avN.moveForward(game.getSpeed() * 0.02f);
+			else
+				avN.moveForward(game.getSpeed());
+		}
 	}
 }

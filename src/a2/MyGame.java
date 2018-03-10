@@ -45,8 +45,8 @@ public class MyGame extends VariableFrameRateGame {
 	// to minimize variable allocation in update()
 	GL4RenderSystem rs;
 	float elapsTime = 0.0f;
-	String elapsTimeStr, counterStr, dispStr;
-	int elapsTimeSec, counter = 0;
+	String elapsTimeStr, counterStr, counterStr2, dispStr;
+	int elapsTimeSec, counter = 0, counter2 = 0;
 	
 	// Variable for changing different game values
 	private int NUM_OF_COINS = 30;
@@ -60,17 +60,15 @@ public class MyGame extends VariableFrameRateGame {
 	private Camera3Pcontroller orbitController1, orbitController2;
 	//***** Input Devices and Actions *****
 	private InputManager im;
-	private Action quitGameAction, moveForwardActionD, moveForwardActionE,
-			moveBackwardActionD, moveBackwardActionE, moveRightActionD, 
-			moveRightActionE, moveLeftActionD, moveLeftActionE, rotateCameraDown,
-			rotateCameraUp, rotateCameraRight,
-			rotateCameraLeft, rideDolphinAction,
-			sprintAction;
+	private Action quitGameAction, moveForwardActionD, moveForwardActionD2,
+			moveBackwardActionD, moveBackwardActionD2, moveRightActionD, 
+			moveRightActionD2, moveLeftActionD, moveLeftActionD2, rotateCameraRightD,
+			rotateCameraRightD2, rotateCameraLeftD, rotateCameraLeftD2, 
+			rideDolphinAction, sprintActionD, sprintActionD2;
 	//***** End Input Devices and Actions *****
 	
 	private SceneNode onDolphinNode;
-	private boolean onDolphin = false;
-	private boolean sprint = true;
+	private boolean sprint = true, sprint2 = true;
 	
 	// Variable for collision with coins
 	private int[] coinList = new int[NUM_OF_COINS];
@@ -78,8 +76,9 @@ public class MyGame extends VariableFrameRateGame {
 	
 	//Variable for the sprint function
 	private int[] speedBar = new int[] {1,0,0,0,0};
-	private int positionBoost = 1;
-	private int speedTimer = 0;
+	private int[] speedBar2 = new int[] {1,0,0,0,0};
+	private int positionBoost = 1, positionBoost2 = 1;
+	private int speedTimer = 0, speedTimer2 = 0;
 	
     public MyGame() {
         super();
@@ -87,11 +86,8 @@ public class MyGame extends VariableFrameRateGame {
 		System.out.println("press S to move backward");
 		System.out.println("press A to move right");
 		System.out.println("press D to move left");
-		//System.out.println("press UP ARROW to turn camera upwards");
-		//System.out.println("press DOWN ARROW to turn camera downwards");
 		System.out.println("press RIGHT ARROW to turn camera right");
 		System.out.println("press LEFT ARROW to turn camera left");
-		//System.out.println("press SPACE to switch ON and OFF the dolphin");
 		System.out.println("press SHIFT for temporary boost when a coin is collected");
     }
 
@@ -155,13 +151,8 @@ public class MyGame extends VariableFrameRateGame {
 		
 		camera2.setRt((Vector3f)Vector3f.createFrom(1.0f, 0.0f, 0.0f));
 		camera2.setUp((Vector3f)Vector3f.createFrom(0.0f, 1.0f, 0.0f));
-		camera2.setFd((Vector3f)Vector3f.createFrom(0.0f, 0.0f, -1.0f));/*
-		
-		camera.setPo((Vector3f)Vector3f.createFrom(0.0f, 0.0f, 0.0f));*/
+		camera2.setFd((Vector3f)Vector3f.createFrom(0.0f, 0.0f, -1.0f));
 
-		//camera.setMode('r');
-        //SceneNode cameraNode = rootNode.createChildSceneNode(camera.getName() + "Node");
-        //cameraNode.attachObject(camera);
     }
 
 //******************************************************************************************************************
@@ -175,7 +166,7 @@ public class MyGame extends VariableFrameRateGame {
         makeDolphin(eng, sm);
         
         // Create Earth
-        makeEarth(eng, sm);
+        //makeEarth(eng, sm);
    
         // Create the Axis
         setupAxis(eng, sm);
@@ -183,28 +174,25 @@ public class MyGame extends VariableFrameRateGame {
         // Create Floor
         createFloor(eng, sm);
         
-        /*sm.getSceneNode("OnDolphinNode").attachChild(sm.getSceneNode("MainCameraNode"));
-		sm.getSceneNode("MainCameraNode").setLocalPosition(0.0f, 0.0f, 0.0f);
-		sm.getSceneNode("MainCameraNode").setLocalRotation(sm.getSceneNode("OnDolphinNode").getLocalRotation());*/
 		activeNode = this.getEngine().getSceneManager().getSceneNode("dolphinNode");
         
         // Set Rotation for the Diamonds
-        RotationController rc = new RotationController(Vector3f.createUnitVectorY(), 0.05f);
+		SceneNode DiamondParentNG = sm.getSceneNode("dolphinNodeG").createChildSceneNode("diamondParentNodeG");
+		BounceNodeController bnc = new BounceNodeController();
         for( int i = 0; i < NUM_OF_EXTRA_OBJECTS; i++)
-    	    rc.addNode(createDiamond(eng, sm, i));
+        	createDiamond(eng, sm, i);
        
-        sm.addController(rc);
-       
-    	SceneNode CoinParentNG = sm.getSceneNode("earthNodeG").createChildSceneNode("coinParentNodeG");
+        bnc.addNode(sm.getSceneNode("diamondParentNodeG"));
+        
+        sm.addController(bnc);
     	
         // Set Bounce for the Coins
-        BounceNodeController bnc = new BounceNodeController();
+        RotationController rc = new RotationController(Vector3f.createUnitVectorZ(), 0.05f);
         for( int i = 0; i < NUM_OF_COINS; i++)
-        	makeCoin(eng, sm, i);
+        	rc.addNode(makeCoin(eng, sm, i));
         
-        bnc.addNode(sm.getSceneNode("coinParentNodeG"));
-       
-        sm.addController(bnc);
+        sm.addController(rc);
+        
 
         sm.getAmbientLight().setIntensity(new Color(.1f, .1f, .1f));
 		
@@ -237,12 +225,15 @@ public class MyGame extends VariableFrameRateGame {
 		elapsTimeSec = Math.round(elapsTime/1000.0f);
 		elapsTimeStr = Integer.toString(elapsTimeSec);
 		counterStr = Integer.toString(counter);
-		dispStr = "Earth Time = " + elapsTimeStr + "   Position = " + getPosition() + "   Coins Picked Up = " + counterStr 
-				+ "   Speed Boost = " + printPowerUp(speedBar);
+		counterStr2 = Integer.toString(counter2);
+		
+		dispStr = "Dolphin2 Time = " + elapsTimeStr + "   Coins Picked Up = " + counterStr2 
+				+ "   Speed Boost = " + printPowerUp(speedBar2);
 		rs.setHUD(dispStr, 15, 15);
-		dispStr = "Dolphin Time = " + elapsTimeStr + "   Position = " + getPosition() + "   Coins Picked Up = " + counterStr 
+		
+		dispStr = "Dolphin Time = " + elapsTimeStr + "   Coins Picked Up = " + counterStr 
 				+ "   Speed Boost = " + printPowerUp(speedBar);
-		rs.setHUD2(dispStr, 15, 345);
+		rs.setHUD2(dispStr, 15, rs.getCanvas().getHeight()/2 + 15);
 			
 		// Tell the input manager to process the inputs
 		im.update(elapsTime);
@@ -251,13 +242,8 @@ public class MyGame extends VariableFrameRateGame {
 		
 		engine.getSceneManager().getSceneNode("MainCameraNode").setLocalRotation(engine.getSceneManager().getSceneNode("dolphinNode").getLocalRotation());
 		
-		// Check distance from Dolphin. If too far, teleport back to dolphin.
-		/*if(getActiveNode().getName().equals("MainCameraNode")) {
-			if(checkCollision(engine.getSceneManager().getSceneNode("dolphinNode"), engine.getSceneManager().getSceneNode("MainCameraNode")) > 4) {
-				engine.getSceneManager().getSceneNode("MainCameraNode").setLocalPosition(engine.getSceneManager().getSceneNode("dolphinNode").getLocalPosition().add(Vector3f.createFrom(-0.3f, 0.2f, 0.0f)));
-			}
-		}*/
 		
+		//******* For Dolphin #1 *************
 		// Check collision of camera and coins
 		for(int i = 0; i < NUM_OF_COINS; i++) {
 			if(checkCollision(engine.getSceneManager().getSceneNode("coin" + Integer.toString(i) + "Node"), engine.getSceneManager().getSceneNode("dolphinNode")) < 0.5) {
@@ -265,19 +251,43 @@ public class MyGame extends VariableFrameRateGame {
 				if(!IntStream.of(coinList).anyMatch(x -> x == temp)) {
 					engine.getSceneManager().getSceneNode("coin" + Integer.toString(i) + "Node").detachAllObjects();
 					coinList[position] = i;
-					addBoost();
+					addBoost(1);
 					counter++;
 					position++;
 				}
 			}
 		}
-		
+				
 		// Sets sprint boost for 3 seconds and then turns off
 		if(sprint == false && speedTimer == 0)
 			speedTimer = elapsTimeSec;
 		else if(sprint == false && (elapsTimeSec - speedTimer) >= 3) {
 			sprint = true;
 			speedTimer = 0;
+		}
+		
+		
+		//******* For Dolphin #2 *************
+		// Check collision of camera and coins
+		for(int i = 0; i < NUM_OF_COINS; i++) {
+			if(checkCollision(engine.getSceneManager().getSceneNode("coin" + Integer.toString(i) + "Node"), engine.getSceneManager().getSceneNode("dolphin2Node")) < 0.5) {
+				int temp = i;
+				if(!IntStream.of(coinList).anyMatch(x -> x == temp)) {
+					engine.getSceneManager().getSceneNode("coin" + Integer.toString(i) + "Node").detachAllObjects();
+					coinList[position] = i;
+					addBoost(2);
+					counter2++;
+					position++;
+				}
+			}
+		}
+		
+		// Sets sprint boost for 3 seconds and then turns off
+		if(sprint2 == false && speedTimer2 == 0)
+			speedTimer2 = elapsTimeSec;
+		else if(sprint2 == false && (elapsTimeSec - speedTimer2) >= 3) {
+			sprint2 = true;
+			speedTimer2 = 0;
 		}
 		
 	}
@@ -291,7 +301,7 @@ public class MyGame extends VariableFrameRateGame {
     	String kbName = im.getKeyboardName();
     	orbitController1 = new Camera3Pcontroller(camera, cameraN, dolphinN, kbName, im);
     	
-    	SceneNode earthN = sm.getSceneNode("earthNode");
+    	SceneNode earthN = sm.getSceneNode("dolphin2Node");
     	SceneNode cameraN2 = sm.getSceneNode("MainCamera2Node");
     	Camera camera2 = sm.getCamera("MainCamera2");
     	String msName = im.getMouseName();
@@ -306,116 +316,136 @@ public class MyGame extends VariableFrameRateGame {
     	im = new GenericInputManager();
     	
     	SceneNode dolphinN = sm.getSceneNode("dolphinNode");
-    	SceneNode earthN = sm.getSceneNode("earthNode");
+    	SceneNode earthN = sm.getSceneNode("dolphin2Node");
     	
     	// Build some action objects for doing things in response to user input
     	quitGameAction = new QuitGameAction(this);
-    	sprintAction = new SprintAction(this);
-    	//rideDolphinAction = new RideDolphinAction(this, onDolphin);
     	
     	// Actions for dolphin doing things in response to user input
     	moveForwardActionD = new MoveForwardAction(dolphinN, this);
     	moveBackwardActionD = new MoveBackwardAction(dolphinN, this);
     	moveLeftActionD = new MoveLeftAction(dolphinN, this);
     	moveRightActionD = new MoveRightAction(dolphinN, this);
+    	rotateCameraRightD = new RotateCameraRight(dolphinN);
+    	rotateCameraLeftD = new RotateCameraLeft(dolphinN);
+    	sprintActionD = new SprintAction(dolphinN, this);
     	
     	// Actions for earth doing things in response to user input
-    	moveForwardActionE = new MoveForwardAction(earthN, this);
-    	moveBackwardActionE = new MoveBackwardAction(earthN, this);
-    	moveLeftActionE = new MoveLeftAction(earthN, this);
-    	moveRightActionE = new MoveRightAction(earthN, this);
-    	
-    	//rotateCameraUp = new RotateCameraUp(dolphinN, this);
-    	//rotateCameraDown = new RotateCameraDown(dolphinN, this);
-    	rotateCameraRight = new RotateCameraRight(dolphinN);
-    	rotateCameraLeft = new RotateCameraLeft(dolphinN, this); 
-    	 
+    	moveForwardActionD2 = new MoveForwardAction(earthN, this);
+    	moveBackwardActionD2 = new MoveBackwardAction(earthN, this);
+    	moveLeftActionD2 = new MoveLeftAction(earthN, this);
+    	moveRightActionD2 = new MoveRightAction(earthN, this);
+    	rotateCameraRightD2 = new RotateCameraRight(earthN);
+    	rotateCameraLeftD2 = new RotateCameraLeft(earthN);
+    	sprintActionD2 = new SprintAction(earthN, this);
     	
     	// Attach the action objects to keyboard and gamepad components
-    	// Keyboard Action
-    	if(im.getKeyboardName() != null) {
-    		String kbName = im.getKeyboardName();
+
+    	// Gamepad Action 
+    	if(im.getFirstGamepadName() == null) {
+    		
+    		// Keyboard Action
+        	if(im.getKeyboardName() != null) {
+        		String kbName = im.getKeyboardName();
+        		
+    	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.ESCAPE, 
+    	    			quitGameAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+    	    	
+    	    	//Dolphin 1
+    	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.W, 
+    				    moveForwardActionD, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+    	    	
+    	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.A, 
+    	    			moveLeftActionD, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+    	    	
+    	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.S, 
+    	    			moveBackwardActionD, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+    	    	
+    	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.D, 
+    	    			moveRightActionD, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+    	    	
+    	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.G, 
+    	    			rotateCameraRightD, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+    	    	
+    	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.H, 
+    	    			rotateCameraLeftD, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+    	    	
+    	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.LSHIFT, 
+    	    			sprintActionD, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+    	    	
+    	    	//Dolphin 2
+    	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.UP, 
+    				    moveForwardActionD2, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+    	    	
+    	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.LEFT, 
+    	    			moveLeftActionD2, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+    	    	
+    	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.DOWN, 
+    	    			moveBackwardActionD2, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+    	    	
+    	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.RIGHT, 
+    	    			moveRightActionD2, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+    	    	
+    	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.NUMPAD4, 
+    	    			rotateCameraRightD2, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+    	    	
+    	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.NUMPAD6, 
+    	    			rotateCameraLeftD2, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+    	    	
+    	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.NUMPAD8, 
+    	    			sprintActionD2, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+    	    	
+        	}
+    	}
+    	else {
+	    	String gpName = im.getFirstGamepadName();
+	    	String kbName = im.getKeyboardName();
     		
 	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.ESCAPE, 
 	    			quitGameAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 	    	
+	    	//Dolphin 1
 	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.W, 
-				    moveForwardActionE, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-	    	
-	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.A, 
-	    			moveLeftActionE, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-	    	
-	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.S, 
-	    			moveBackwardActionE, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-	    	
-	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.D, 
-	    			moveRightActionE, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-	    	
-	    	//Dolphin
-	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.NUMPAD8, 
 				    moveForwardActionD, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 	    	
-	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.NUMPAD4, 
+	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.A, 
 	    			moveLeftActionD, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 	    	
-	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.NUMPAD5, 
+	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.S, 
 	    			moveBackwardActionD, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 	    	
-	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.NUMPAD6, 
+	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.D, 
 	    			moveRightActionD, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 	    	
-	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.RIGHT, 
-	    			rotateCameraRight, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.G, 
+	    			rotateCameraRightD, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 	    	
-	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.LEFT, 
-	    			rotateCameraLeft, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.H, 
+	    			rotateCameraLeftD, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 	    	
 	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.LSHIFT, 
-	    			sprintAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
-	    	
-	    	/*im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.UP, 
-	    			rotateCameraUp, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-	
-			im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.DOWN, 
-					rotateCameraDown, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-			
-			im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.SPACE, 
-	    			rideDolphinAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);*/
-    	}
-
-    	// Gamepad Action 
-    	if(im.getFirstGamepadName() != null) {
-	    	String gpName = im.getFirstGamepadName();
+	    			sprintActionD, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 	    		
 		    im.associateAction(gpName, net.java.games.input.Component.Identifier.Axis.X, 
-					moveForwardActionD, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+					moveForwardActionD2, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 		    	
 		    im.associateAction(gpName, net.java.games.input.Component.Identifier.Axis.X, 
-		    		moveLeftActionD, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+		    		moveLeftActionD2, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 		    	
 		    im.associateAction(gpName, net.java.games.input.Component.Identifier.Axis.Y, 
-		    		moveBackwardActionD, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+		    		moveBackwardActionD2, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 		    	
 		    im.associateAction(gpName, net.java.games.input.Component.Identifier.Axis.Y, 
-		    		moveRightActionD, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-		    	
-		    im.associateAction(gpName, net.java.games.input.Component.Identifier.Axis.RY, 
-		    		rotateCameraUp, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-		    	
-		    im.associateAction(gpName, net.java.games.input.Component.Identifier.Axis.RY, 
-		    		rotateCameraDown, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+		    		moveRightActionD2, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 		    	
 		    im.associateAction(gpName, net.java.games.input.Component.Identifier.Axis.RX, 
-		    		rotateCameraRight, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+		    		rotateCameraRightD2, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 		    	
 		    im.associateAction(gpName, net.java.games.input.Component.Identifier.Axis.RX, 
-		    		rotateCameraLeft, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-			
-		    im.associateAction(gpName, net.java.games.input.Component.Identifier.Button._0, 
-		    		rideDolphinAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+		    		rotateCameraLeftD2, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 		    
 		    im.associateAction(gpName, net.java.games.input.Component.Identifier.Button._1, 
-	    			sprintAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+	    			sprintActionD2, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
     	}
 
     }
@@ -434,32 +464,25 @@ public class MyGame extends VariableFrameRateGame {
     	activeNode = sn;
     }
     
-    // Set HUD Display of current status (ON or OFF Dolphin)
-    public String getPosition() {
-    	if(activeNode.getName().equals("MainCameraNode")) {
-    		
-    		return "OFF_DOLPHIN";
-    	}
-    	else
-    		return "ON_DOLPHIN";
-    }
-    
     // Create a random float variable
     public static float randInRangeFloat(int min, int max) {
         return min + (float) (Math.random() * ((1 + max) - min));
     }
     
     // Change whether sprint is on or off
-    public void changeSprint() {
-    	if(sprint)
-    		sprint = false;
+    public void changeSprint(boolean s) {
+    	if(s)
+    		s = false;
     	else
-    		sprint = true;
+    		s = true;
     }
     
     // Get sprint status
-    public boolean getSprint() {
-    	return sprint;
+    public boolean getSprint(int i) {
+    	if (i == 1)
+    		return sprint;
+    	else
+    		return sprint2;
     }
     
     // Get the current speed
@@ -480,23 +503,42 @@ public class MyGame extends VariableFrameRateGame {
     }
     
     // Get Boost status
-    public int getBoost() {
-    	return positionBoost;
+    public int getBoost(int i) {
+    	if (i == 1)
+    		return positionBoost;
+    	else
+    		return positionBoost2;
     }
     
     // Add Boost to SprintBar
-    private void addBoost() {
-    	if(positionBoost < 5) {
-    		speedBar[positionBoost] = 1;
-    		positionBoost++;
+    private void addBoost(int i) {
+    	if (i == 1) {
+	    	if(positionBoost < 5) {
+	    		speedBar[positionBoost] = 1;
+	    		positionBoost++;
+	    	}
+    	}
+    	else {
+    		if(positionBoost2 < 5) {
+	    		speedBar2[positionBoost2] = 1;
+	    		positionBoost2++;
+	    	}
     	}
     }
     
     // Remove Boost from SprintBar
-    public void consumeBoost() {
-    	if(positionBoost > 0) {
-    		speedBar[positionBoost - 1] = 0;
-    		positionBoost--;
+    public void consumeBoost(int i) {
+    	if (i == 1) {
+	    	if(positionBoost > 0) {
+	    		speedBar[positionBoost - 1] = 0;
+	    		positionBoost--;
+	    	}
+    	}
+    	else {
+    		if(positionBoost2 > 0) {
+	    		speedBar2[positionBoost2 - 1] = 0;
+	    		positionBoost2--;
+	    	}
     	}
     }
     
@@ -525,11 +567,14 @@ public class MyGame extends VariableFrameRateGame {
 
     	SceneNode dolphinN = dolphinNG.createChildSceneNode(dolphinE.getName() + "Node");
     	dolphinN.moveUp(0.4f);
-    	//dolphinN.moveLeft(0.4f);
     	dolphinN.attachObject(dolphinE);
     	
-    	onDolphinNode = sm.getSceneNode("dolphinNode").createChildSceneNode("OnDolphinNode");
-    	onDolphinNode.moveUp(0.3f);
+    	Entity dolphin2E = sm.createEntity("dolphin2", "dolphinHighPoly.obj");
+    	dolphin2E.setPrimitive(Primitive.TRIANGLES);
+    	
+    	SceneNode dolphin2N = dolphinNG.createChildSceneNode("dolphin2Node");
+    	dolphin2N.moveUp(0.4f);
+    	dolphin2N.attachObject(dolphin2E);
     }
     
     //***** Make Earth *****
@@ -550,9 +595,9 @@ public class MyGame extends VariableFrameRateGame {
     	Entity coinE = sm.createEntity("coin" + Integer.toString(num),	"coin.obj");
     	coinE.setPrimitive(Primitive.TRIANGLES);
     	
-    	SceneNode coinN = sm.getSceneNode("coinParentNodeG").createChildSceneNode(coinE.getName() + "Node");
+    	SceneNode coinN = sm.getSceneNode("dolphinNodeG").createChildSceneNode(coinE.getName() + "Node");
     	coinN.moveForward(randInRangeFloat(-SIZE_OF_SPACE, SIZE_OF_SPACE));
-    	coinN.moveUp(randInRangeFloat(-1, 0));
+    	coinN.moveUp(0.5f);
     	coinN.moveRight(randInRangeFloat(-SIZE_OF_SPACE, SIZE_OF_SPACE));
     	coinN.rotate(Degreef.createFrom(90f), Vector3f.createUnitVectorX());
     	coinN.rotate(Degreef.createFrom(180f), Vector3f.createUnitVectorZ());
@@ -672,7 +717,8 @@ public class MyGame extends VariableFrameRateGame {
     
     private SceneNode createDiamond(Engine eng, SceneManager sm, int num) throws IOException {
     	ManualObject dia = makeDiamond(eng, sm, num);
-        SceneNode diaN = sm.getRootSceneNode().createChildSceneNode("Diamond" + Integer.toString(num) + "Node");
+        //SceneNode diaN = sm.getRootSceneNode().createChildSceneNode("Diamond" + Integer.toString(num) + "Node");
+        SceneNode diaN = sm.getSceneNode("diamondParentNodeG").createChildSceneNode(dia.getName() + "Node");
         diaN.scale(0.75f, 0.75f, 0.75f);
         diaN.moveForward(randInRangeFloat(-SIZE_OF_SPACE, SIZE_OF_SPACE));
         diaN.moveUp(randInRangeFloat(0, 1));

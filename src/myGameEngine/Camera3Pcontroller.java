@@ -25,7 +25,7 @@ public class Camera3Pcontroller{
 		cameraAzimuth = 225.0f;		//start from BEHIND and ABOVE the target
 		cameraElevation = 20.0f; 	//elevation is in degrees
 		radias = 2.0f;
-		worldUpVec = Vector3f.createFrom(0.0f, 1.0f, 0.0f);
+		worldUpVec = Vector3f.createFrom(0.0f, 10.0f, 0.0f);
 		setupInput(im, controllerName);
 		updateCameraPosition();
 	} 
@@ -40,7 +40,7 @@ public class Camera3Pcontroller{
 		double y = radias * Math.sin(phi);
 		double z = radias * Math.cos(phi) * Math.cos(theta);
 		cameraN.setLocalPosition(Vector3f.createFrom((float)x, (float)y, (float)z).add(target.getWorldPosition()));
-		
+		//System.out.println(target.getLocalRotation().);
 		//cameraN.setLocalRotation(Vector3f.createFrom((float)x, (float)y, (float)z).add(target.getWorldRotation()));
 		cameraN.lookAt(target, worldUpVec);
 	}
