@@ -18,6 +18,5 @@ public class RotateCameraLeft extends AbstractInputAction {
 	
 	public void performAction(float time, Event event) {
 		avN.yaw(Degreef.createFrom(3f));
-		//game.getEngine().getSceneManager().getSceneNode(game.getActiveNode().getName()).yaw(Degreef.createFrom(3f));
 	}
 }

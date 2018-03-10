@@ -8,6 +8,7 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.stream.IntStream;
 
+import myGameEngine.BounceNodeController;
 import myGameEngine.Camera3Pcontroller;
 import myGameEngine.MoveBackwardAction;
 import myGameEngine.MoveForwardAction;
@@ -36,7 +37,6 @@ import ray.rage.util.BufferUtil;
 import ray.rage.util.Configuration;
 import ray.rml.*;
 import ray.rage.rendersystem.gl4.GL4RenderSystem;
-import ray.rage.rendersystem.states.TextureState;
 import ray.rage.rendersystem.states.*;
 import ray.rage.rendersystem.shader.*;
 
@@ -51,7 +51,7 @@ public class MyGame extends VariableFrameRateGame {
 	// Variable for changing different game values
 	private int NUM_OF_COINS = 30;
 	private int NUM_OF_EXTRA_OBJECTS = 10;
-	private int SIZE_OF_SPACE = 20;
+	private int SIZE_OF_SPACE = 38;
 	private float MAX_SPEED = 0.5f;
 	
 	//Entity dolphinE;
@@ -87,11 +87,11 @@ public class MyGame extends VariableFrameRateGame {
 		System.out.println("press S to move backward");
 		System.out.println("press A to move right");
 		System.out.println("press D to move left");
-		System.out.println("press UP ARROW to turn camera upwards");
-		System.out.println("press DOWN ARROW to turn camera downwards");
+		//System.out.println("press UP ARROW to turn camera upwards");
+		//System.out.println("press DOWN ARROW to turn camera downwards");
 		System.out.println("press RIGHT ARROW to turn camera right");
 		System.out.println("press LEFT ARROW to turn camera left");
-		System.out.println("press SPACE to switch ON and OFF the dolphin");
+		//System.out.println("press SPACE to switch ON and OFF the dolphin");
 		System.out.println("press SHIFT for temporary boost when a coin is collected");
     }
 
@@ -171,43 +171,40 @@ public class MyGame extends VariableFrameRateGame {
     @Override
     protected void setupScene(Engine eng, SceneManager sm) throws IOException {
     	
-    	SceneNode dolphinNG = sm.getRootSceneNode().createChildSceneNode("dolphinNodeG");
-    	SceneNode earthNG = dolphinNG.createChildSceneNode("earthNodeG");
-        // Create Dolphin
+    	// Create Dolphin
         makeDolphin(eng, sm);
         
-    	// Create Earth
+        // Create Earth
         makeEarth(eng, sm);
    
         // Create the Axis
         setupAxis(eng, sm);
         
-        //Create the Floor
+        // Create Floor
         createFloor(eng, sm);
         
-        activeNode = this.getEngine().getSceneManager().getSceneNode("MainCameraNode");
+        /*sm.getSceneNode("OnDolphinNode").attachChild(sm.getSceneNode("MainCameraNode"));
+		sm.getSceneNode("MainCameraNode").setLocalPosition(0.0f, 0.0f, 0.0f);
+		sm.getSceneNode("MainCameraNode").setLocalRotation(sm.getSceneNode("OnDolphinNode").getLocalRotation());*/
+		activeNode = this.getEngine().getSceneManager().getSceneNode("dolphinNode");
         
         // Set Rotation for the Diamonds
-        RotationController rc = new RotationController(Vector3f.createUnitVectorY(), 0.01f);
+        RotationController rc = new RotationController(Vector3f.createUnitVectorY(), 0.05f);
         for( int i = 0; i < NUM_OF_EXTRA_OBJECTS; i++)
     	    rc.addNode(createDiamond(eng, sm, i));
        
         sm.addController(rc);
        
-        // Set Rotation for the Coins
-        sm.getRootSceneNode().createChildSceneNode("CoinParentNode");
-        
-        RotationController rcCoin = new RotationController(Vector3f.createUnitVectorZ(), 0.4f);
+    	SceneNode CoinParentNG = sm.getSceneNode("earthNodeG").createChildSceneNode("coinParentNodeG");
+    	
+        // Set Bounce for the Coins
+        BounceNodeController bnc = new BounceNodeController();
         for( int i = 0; i < NUM_OF_COINS; i++)
         	makeCoin(eng, sm, i);
         
-        
-        
-       // rcCoin.addNode(sm.getSceneNode("CoinParentNode"));
-        /*for( int i = 0; i < NUM_OF_COINS; i++)
-    	    rcCoin.addNode(makeCoin(eng, sm, i));*/
+        bnc.addNode(sm.getSceneNode("coinParentNodeG"));
        
-        //sm.addController(rcCoin);
+        sm.addController(bnc);
 
         sm.getAmbientLight().setIntensity(new Color(.1f, .1f, .1f));
 		
@@ -216,11 +213,11 @@ public class MyGame extends VariableFrameRateGame {
         plight.setAmbient(new Color(.3f, .3f, .3f));
         plight.setDiffuse(new Color(.7f, .7f, .7f));
         plight.setSpecular(new Color(1.0f, 1.0f, 1.0f));
-        plight.setRange(5f);
+        plight.setRange(40f);
 		
         SceneNode plightNode = sm.getRootSceneNode().createChildSceneNode("plightNode");
         plightNode.attachObject(plight);
-
+        
     	// Setup the input actions
     	setupInputs(sm);
     	
@@ -240,10 +237,10 @@ public class MyGame extends VariableFrameRateGame {
 		elapsTimeSec = Math.round(elapsTime/1000.0f);
 		elapsTimeStr = Integer.toString(elapsTimeSec);
 		counterStr = Integer.toString(counter);
-		dispStr = "Dolphin Time = " + elapsTimeStr + "   Position = " + getPosition() + "   Coins Picked Up = " + counterStr 
+		dispStr = "Earth Time = " + elapsTimeStr + "   Position = " + getPosition() + "   Coins Picked Up = " + counterStr 
 				+ "   Speed Boost = " + printPowerUp(speedBar);
 		rs.setHUD(dispStr, 15, 15);
-		dispStr = "Earth Time = " + elapsTimeStr + "   Position = " + getPosition() + "   Coins Picked Up = " + counterStr 
+		dispStr = "Dolphin Time = " + elapsTimeStr + "   Position = " + getPosition() + "   Coins Picked Up = " + counterStr 
 				+ "   Speed Boost = " + printPowerUp(speedBar);
 		rs.setHUD2(dispStr, 15, 345);
 			
@@ -252,16 +249,18 @@ public class MyGame extends VariableFrameRateGame {
 		orbitController1.updateCameraPosition();
 		orbitController2.updateCameraPosition();
 		
+		engine.getSceneManager().getSceneNode("MainCameraNode").setLocalRotation(engine.getSceneManager().getSceneNode("dolphinNode").getLocalRotation());
+		
 		// Check distance from Dolphin. If too far, teleport back to dolphin.
-		if(getActiveNode().getName().equals("MainCameraNode")) {
+		/*if(getActiveNode().getName().equals("MainCameraNode")) {
 			if(checkCollision(engine.getSceneManager().getSceneNode("dolphinNode"), engine.getSceneManager().getSceneNode("MainCameraNode")) > 4) {
 				engine.getSceneManager().getSceneNode("MainCameraNode").setLocalPosition(engine.getSceneManager().getSceneNode("dolphinNode").getLocalPosition().add(Vector3f.createFrom(-0.3f, 0.2f, 0.0f)));
 			}
-		}
+		}*/
 		
 		// Check collision of camera and coins
 		for(int i = 0; i < NUM_OF_COINS; i++) {
-			if(checkCollision(engine.getSceneManager().getSceneNode("coin" + Integer.toString(i) + "Node"), engine.getSceneManager().getSceneNode("MainCameraNode")) < 0.1) {
+			if(checkCollision(engine.getSceneManager().getSceneNode("coin" + Integer.toString(i) + "Node"), engine.getSceneManager().getSceneNode("dolphinNode")) < 0.5) {
 				int temp = i;
 				if(!IntStream.of(coinList).anyMatch(x -> x == temp)) {
 					engine.getSceneManager().getSceneNode("coin" + Integer.toString(i) + "Node").detachAllObjects();
@@ -284,6 +283,7 @@ public class MyGame extends VariableFrameRateGame {
 	}
     
 //******************
+    
     protected void setupOrbitCameras(Engine eng, SceneManager sm) {
     	SceneNode dolphinN = sm.getSceneNode("dolphinNode");
     	SceneNode cameraN = sm.getSceneNode("MainCameraNode");
@@ -311,7 +311,7 @@ public class MyGame extends VariableFrameRateGame {
     	// Build some action objects for doing things in response to user input
     	quitGameAction = new QuitGameAction(this);
     	sprintAction = new SprintAction(this);
-    	rideDolphinAction = new RideDolphinAction(this, onDolphin);
+    	//rideDolphinAction = new RideDolphinAction(this, onDolphin);
     	
     	// Actions for dolphin doing things in response to user input
     	moveForwardActionD = new MoveForwardAction(dolphinN, this);
@@ -325,9 +325,9 @@ public class MyGame extends VariableFrameRateGame {
     	moveLeftActionE = new MoveLeftAction(earthN, this);
     	moveRightActionE = new MoveRightAction(earthN, this);
     	
-    	rotateCameraUp = new RotateCameraUp(this);
-    	rotateCameraDown = new RotateCameraDown(dolphinN, this);
-    	rotateCameraRight = new RotateCameraRight(this);
+    	//rotateCameraUp = new RotateCameraUp(dolphinN, this);
+    	//rotateCameraDown = new RotateCameraDown(dolphinN, this);
+    	rotateCameraRight = new RotateCameraRight(dolphinN);
     	rotateCameraLeft = new RotateCameraLeft(dolphinN, this); 
     	 
     	
@@ -364,23 +364,23 @@ public class MyGame extends VariableFrameRateGame {
 	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.NUMPAD6, 
 	    			moveRightActionD, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 	    	
-	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.UP, 
-	    			rotateCameraUp, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-	    	
-	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.DOWN, 
-	    			rotateCameraDown, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-	    	
 	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.RIGHT, 
 	    			rotateCameraRight, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 	    	
 	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.LEFT, 
 	    			rotateCameraLeft, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-		
-	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.SPACE, 
-	    			rideDolphinAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 	    	
 	    	im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.LSHIFT, 
 	    			sprintAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+	    	
+	    	/*im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.UP, 
+	    			rotateCameraUp, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+	
+			im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.DOWN, 
+					rotateCameraDown, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+			
+			im.associateAction(kbName, net.java.games.input.Component.Identifier.Key.SPACE, 
+	    			rideDolphinAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);*/
     	}
 
     	// Gamepad Action 
@@ -520,10 +520,12 @@ public class MyGame extends VariableFrameRateGame {
     private void makeDolphin(Engine eng, SceneManager sm) throws IOException {
     	Entity dolphinE = sm.createEntity("dolphin", "dolphinHighPoly.obj");
     	dolphinE.setPrimitive(Primitive.TRIANGLES);
+    	
+    	SceneNode dolphinNG = sm.getRootSceneNode().createChildSceneNode(dolphinE.getName() + "NodeG");
 
-    	SceneNode dolphinN = sm.getSceneNode("dolphinNodeG").createChildSceneNode(dolphinE.getName() + "Node");
-    	dolphinN.moveDown(0.4f);
-    	dolphinN.moveLeft(0.4f);
+    	SceneNode dolphinN = dolphinNG.createChildSceneNode(dolphinE.getName() + "Node");
+    	dolphinN.moveUp(0.4f);
+    	//dolphinN.moveLeft(0.4f);
     	dolphinN.attachObject(dolphinE);
     	
     	onDolphinNode = sm.getSceneNode("dolphinNode").createChildSceneNode("OnDolphinNode");
@@ -532,12 +534,14 @@ public class MyGame extends VariableFrameRateGame {
     
     //***** Make Earth *****
     private void makeEarth(Engine eng, SceneManager sm) throws IOException {
-	    Entity earthE = sm.createEntity("earth", "earth.obj");
+    	Entity earthE = sm.createEntity("earth", "earth.obj");
 	    earthE.setPrimitive(Primitive.TRIANGLES);
 	    
-	    SceneNode earthN = sm.getSceneNode("earthNodeG").createChildSceneNode(earthE.getName() + "Node");
+	    SceneNode earthNG = sm.getSceneNode("dolphinNodeG").createChildSceneNode("earthNodeG");
+	    
+	    SceneNode earthN = earthNG.createChildSceneNode(earthE.getName() + "Node");
 	    earthN.attachObject(earthE);
-	    earthN.setLocalPosition(-1.0f, 0.0f, 0.0f);
+	    earthN.setLocalPosition(0.0f, 0.5f, 0.0f);
 	    earthN.setLocalScale(0.2f, 0.2f, 0.2f);
     }
     
@@ -546,10 +550,9 @@ public class MyGame extends VariableFrameRateGame {
     	Entity coinE = sm.createEntity("coin" + Integer.toString(num),	"coin.obj");
     	coinE.setPrimitive(Primitive.TRIANGLES);
     	
-    	SceneNode coinN = sm.getSceneNode("earthNodeG").createChildSceneNode(coinE.getName() + "Node");
-    	//SceneNode coinN = sm.getRootSceneNode().createChildSceneNode(coinE.getName() + "Node");
+    	SceneNode coinN = sm.getSceneNode("coinParentNodeG").createChildSceneNode(coinE.getName() + "Node");
     	coinN.moveForward(randInRangeFloat(-SIZE_OF_SPACE, SIZE_OF_SPACE));
-    	coinN.moveUp(randInRangeFloat(-SIZE_OF_SPACE, SIZE_OF_SPACE));
+    	coinN.moveUp(randInRangeFloat(-1, 0));
     	coinN.moveRight(randInRangeFloat(-SIZE_OF_SPACE, SIZE_OF_SPACE));
     	coinN.rotate(Degreef.createFrom(90f), Vector3f.createUnitVectorX());
     	coinN.rotate(Degreef.createFrom(180f), Vector3f.createUnitVectorZ());
@@ -558,14 +561,14 @@ public class MyGame extends VariableFrameRateGame {
 
     	return coinN;
     }
-   
+    
     protected ManualObject makeFloor(Engine eng, SceneManager sm) throws IOException {
     	ManualObject fl = sm.createManualObject("Floor");
     	ManualObjectSection flSec = fl.createManualSection("FloorSection");
     	fl.setGpuShaderProgram(sm.getRenderSystem().getGpuShaderProgram(GpuShaderProgram.Type.RENDERING));
     	float[] vertices = new float[] {
-    			-5.0f, 0.0f, 5.0f, 5.0f, 0.0f, 5.0f, -5.0f, 0.0f, -5.0f,
-    			5.0f, 0.0f, -5.0f, -5.0f, 0.0f, -5.0f, 5.0f, 0.0f, 5.0f
+    			-40.0f, 0.0f, 40.0f, 40.0f, 0.0f, 40.0f, -40.0f, 0.0f, -40.0f,
+    			40.0f, 0.0f, -40.0f, -40.0f, 0.0f, -40.0f, 40.0f, 0.0f, 40.0f
     	};
     	
     	float[] texcoords = new float[] {
@@ -604,9 +607,6 @@ public class MyGame extends VariableFrameRateGame {
     	ManualObject fl = makeFloor(eng, sm);
         SceneNode flN = sm.getRootSceneNode().createChildSceneNode("FloorNode");
         flN.scale(0.75f, 0.75f, 0.75f);
-        /*flN.moveForward(randInRangeFloat(-SIZE_OF_SPACE, SIZE_OF_SPACE));
-        flN.moveUp(randInRangeFloat(-SIZE_OF_SPACE, SIZE_OF_SPACE));
-        flN.moveRight(randInRangeFloat(-SIZE_OF_SPACE, SIZE_OF_SPACE));*/
         flN.attachObject(fl);
         
         return flN;
@@ -675,7 +675,7 @@ public class MyGame extends VariableFrameRateGame {
         SceneNode diaN = sm.getRootSceneNode().createChildSceneNode("Diamond" + Integer.toString(num) + "Node");
         diaN.scale(0.75f, 0.75f, 0.75f);
         diaN.moveForward(randInRangeFloat(-SIZE_OF_SPACE, SIZE_OF_SPACE));
-        diaN.moveUp(randInRangeFloat(-SIZE_OF_SPACE, SIZE_OF_SPACE));
+        diaN.moveUp(randInRangeFloat(0, 1));
         diaN.moveRight(randInRangeFloat(-SIZE_OF_SPACE, SIZE_OF_SPACE));
         diaN.attachObject(dia);
         

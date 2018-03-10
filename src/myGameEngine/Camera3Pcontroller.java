@@ -22,7 +22,7 @@ public class Camera3Pcontroller{
 		camera = cam;
 		cameraN = camN;
 		target = targ;
-		cameraAzimuth = 225.0f;	//start from BEHIND and ABOVE the target
+		cameraAzimuth = 225.0f;		//start from BEHIND and ABOVE the target
 		cameraElevation = 20.0f; 	//elevation is in degrees
 		radias = 2.0f;
 		worldUpVec = Vector3f.createFrom(0.0f, 1.0f, 0.0f);
@@ -40,12 +40,14 @@ public class Camera3Pcontroller{
 		double y = radias * Math.sin(phi);
 		double z = radias * Math.cos(phi) * Math.cos(theta);
 		cameraN.setLocalPosition(Vector3f.createFrom((float)x, (float)y, (float)z).add(target.getWorldPosition()));
+		
+		//cameraN.setLocalRotation(Vector3f.createFrom((float)x, (float)y, (float)z).add(target.getWorldRotation()));
 		cameraN.lookAt(target, worldUpVec);
 	}
 	
 	private void setupInput (InputManager im, String cn) {
 		Action orbitAAction = new OrbitAroundAction();
-		im.associateAction(cn, net.java.games.input.Component.Identifier.Axis.RX,  
+		im.associateAction(cn, net.java.games.input.Component.Identifier.Key.Q,  
 				orbitAAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 		// similar input set up for OrbitRadiasAction, OrbitElevationAction
 	}
@@ -54,11 +56,11 @@ public class Camera3Pcontroller{
 		//Moves the camera around the target (changes camera azimuth).
 		public void performAction(float time, net.java.games.input.Event evt) {
 			float rotAmount;
-			if (evt.getValue() < -0.2)
-				rotAmount=-0.2f;
+			if (evt.getValue() < -0.8)
+				rotAmount=-0.8f;
 			else {
-				if (evt.getValue() > 0.2)
-					rotAmount=0.2f;
+				if (evt.getValue() > 0.8)
+					rotAmount=0.8f;
 				else
         	 		rotAmount=0.0f;
 			} 
